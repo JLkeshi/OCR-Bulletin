@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Registrar Bulletin Board</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app" id="app">
+
+  <!-- Header -->
+  <header class="topbar">
+    <img class="logo" id="logoL" alt="Office seal">
+    <div class="titles">
+      <h1 id="title">Office of the College Registrar</h1>
+      <p id="subtitle">City College of Calamba</p>
+    </div>
+    <div class="clock">
+      <div id="time">--:--</div>
+      <div id="date"></div>
+    </div>
+    <img class="logo" id="logoR" alt="College logo">
+  </header>
+
+  <!-- Board -->
+  <main class="board">
+    <section class="panel img-panel">
+      <div class="wm" id="wmL"></div>
+      <div class="empty" id="empty">No announcement image yet.<br>Click “Edit” to upload one.</div>
+      <img id="slide" alt="Announcement">
+      <div class="dots" id="dots"></div>
+      <div class="thumbs" id="thumbs"></div>
+    </section>
+
+    <section class="panel note-panel">
+      <div class="wm" id="wmR"></div>
+      <div class="note-head">Announcement</div>
+      <div id="note" class="note-view"></div>
+    </section>
+  </main>
+
+  <!-- Moving announcement -->
+  <footer class="ticker">
+    <div class="tag">NOTICE</div>
+    <div class="viewport">
+      <div class="track" id="track"></div>
+      <input type="text" class="ticker-edit" id="tickerEdit" placeholder="Type the moving announcement here…">
+    </div>
+  </footer>
+</div>
+
+<button class="fab" id="fab">Edit</button>
+
+<!-- Edit panel -->
+<div class="drawer" id="drawer">
+  <div class="row wide">
+    <button class="btn" id="editNote">Edit notepad (Ctrl+E)</button>
+    <button class="btn" id="addImg">Upload announcement image(s)</button>
+    <button class="btn danger" id="clearImg">Remove all images</button>
+    <button class="btn alt" id="full">Fullscreen</button>
+    <button class="btn alt push" id="done">Done</button>
+  </div>
+
+  <label class="wide">Moving announcement (bottom)
+    <input type="text" id="tickerIn" placeholder="Type the scrolling announcement…">
+  </label>
+  <label>Header title <input type="text" id="titleIn"></label>
+  <label>Header subtitle <input type="text" id="subtitleIn"></label>
+
+  <div class="row wide">
+    <button class="btn alt" id="upSeal">Upload office seal</button>
+    <button class="btn alt" id="upLogo">Upload college logo</button>
+    <button class="btn alt" id="clearLogos">Remove logos</button>
+  </div>
+
+  <label>Scroll speed <input type="range" id="speed" min="30" max="300" step="10"></label>
+  <label>Slide time (seconds) <input type="range" id="secs" min="3" max="30" step="1"></label>
+  <label>Notepad max text size <input type="range" id="fs" min="20" max="90" step="1"></label>
+  <label class="check"><input type="checkbox" id="auto"> Auto-fit text to the notepad</label>
+
+  <div class="hint wide">Changes save automatically in this browser. Press E to toggle edit mode, Ctrl+E to edit the notepad.</div>
+
+  <input type="file" id="file" accept="image/*" multiple hidden>
+  <input type="file" id="fileSeal" accept="image/*" hidden>
+  <input type="file" id="fileLogo" accept="image/*" hidden>
+</div>
+
+<!-- Pop-out notepad editor (Ctrl+E) -->
+<div class="modal" id="noteModal" hidden>
+  <div class="modal-card" role="dialog" aria-label="Edit announcement">
+    <div class="modal-head">
+      <span>Edit Announcement</span>
+      <button class="btn" id="noteClose">Done</button>
+    </div>
+    <textarea id="noteEdit" placeholder="Type the announcement here…"></textarea>
+    <div class="hint">Changes appear on the board as you type. Press Esc or Ctrl+Enter when done.</div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
