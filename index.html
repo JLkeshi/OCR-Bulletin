@@ -94,8 +94,44 @@
       <span>Edit Announcement</span>
       <button class="btn" id="noteClose">Done</button>
     </div>
-    <textarea id="noteEdit" placeholder="Type the announcement here…"></textarea>
-    <div class="hint">Changes appear on the board as you type. Press Esc or Ctrl+Enter when done.</div>
+    <div class="tb" id="tb">
+      <div class="tg">
+        <button data-cmd="bold" title="Bold (Ctrl+B)"><b>B</b></button>
+        <button data-cmd="italic" title="Italic (Ctrl+I)"><i>I</i></button>
+        <button data-cmd="underline" title="Underline (Ctrl+U)"><u>U</u></button>
+        <button data-cmd="removeFormat" title="Clear formatting">T<sub>x</sub></button>
+      </div>
+      <div class="tg">
+        <button data-cmd="strikeThrough" title="Strikethrough"><s>S</s></button>
+        <button data-cmd="superscript" title="Superscript">x<sup>2</sup></button>
+        <button data-cmd="subscript" title="Subscript">x<sub>2</sub></button>
+      </div>
+      <div class="tg">
+        <select id="selBlock" title="Paragraph style"><option value="">Style</option><option value="p">Paragraph</option><option value="h2">Title</option><option value="h3">Subtitle</option></select>
+        <select id="selFont" title="Font style"><option value="">Font</option><option value="Segoe UI" style="font-family:'Segoe UI'">Segoe UI</option><option value="Georgia" style="font-family:'Georgia'">Georgia</option><option value="Times New Roman" style="font-family:'Times New Roman'">Times New Roman</option><option value="Arial" style="font-family:'Arial'">Arial</option><option value="Verdana" style="font-family:'Verdana'">Verdana</option><option value="Trebuchet MS" style="font-family:'Trebuchet MS'">Trebuchet MS</option><option value="Courier New" style="font-family:'Courier New'">Courier New</option><option value="Impact" style="font-family:'Impact'">Impact</option><option value="Brush Script MT" style="font-family:'Brush Script MT'">Brush Script MT</option></select>
+        <select id="selSize" title="Text size"><option value="">Size</option><option value="0.8">Small</option><option value="1">Normal</option><option value="1.3">Large</option><option value="1.7">X-Large</option><option value="2.3">Huge</option><option value="3">Giant</option></select>
+      </div>
+      <div class="tg">
+        <label class="clr" title="Highlight color"><span class="hl" id="hlChip"></span><input type="color" id="hlIn" value="#ffff00"></label>
+        <label class="clr" title="Text color"><b class="fg" id="fgChip">A</b><input type="color" id="fgIn" value="#d00000"></label>
+      </div>
+      <div class="tg">
+        <button data-cmd="insertUnorderedList" title="Bullet list"><svg viewBox="0 0 16 16" width="16" height="16"><path d="M6 4h8M6 8h8M6 12h8" stroke="currentColor" stroke-width="1.6"/><circle cx="2.5" cy="4" r="1.2" fill="currentColor"/><circle cx="2.5" cy="8" r="1.2" fill="currentColor"/><circle cx="2.5" cy="12" r="1.2" fill="currentColor"/></svg></button>
+        <button data-cmd="insertOrderedList" title="Numbered list">1.</button>
+      </div>
+      <div class="tg">
+        <button data-cmd="justifyLeft" title="Align left"><svg viewBox="0 0 16 16" width="16" height="16"><path d="M2 3h12M2 6h8M2 9h12M2 12h8" stroke="currentColor" stroke-width="1.6" fill="none"/></svg></button>
+        <button data-cmd="justifyCenter" title="Center"><svg viewBox="0 0 16 16" width="16" height="16"><path d="M2 3h12M4 6h8M2 9h12M4 12h8" stroke="currentColor" stroke-width="1.6" fill="none"/></svg></button>
+        <button data-cmd="justifyRight" title="Align right"><svg viewBox="0 0 16 16" width="16" height="16"><path d="M2 3h12M6 6h8M2 9h12M6 12h8" stroke="currentColor" stroke-width="1.6" fill="none"/></svg></button>
+        <button data-cmd="justifyFull" title="Justify"><svg viewBox="0 0 16 16" width="16" height="16"><path d="M2 3h12M2 6h12M2 9h12M2 12h12" stroke="currentColor" stroke-width="1.6" fill="none"/></svg></button>
+      </div>
+      <div class="tg">
+        <button data-cmd="undo" title="Undo (Ctrl+Z)">&#8630;</button>
+        <button data-cmd="redo" title="Redo (Ctrl+Y)">&#8631;</button>
+      </div>
+    </div>
+    <div id="noteEdit" class="note-view" contenteditable="true" spellcheck="true" data-ph="Type the announcement here…"></div>
+    <div class="hint">Select a word or sentence to change its size, font, color or highlight. Changes appear on the board as you type. Press Esc or Ctrl+Enter when done.</div>
   </div>
 </div>
 

@@ -3,7 +3,7 @@
   var state = {
     images: [], note: '', ticker: 'Welcome to the Office of the College Registrar',
     title: 'Office of the College Registrar', subtitle: 'City College of Calamba',
-    seal: '', logo: '', speed: 90, secs: 8, maxfs: 56, auto: true
+    seal: '', logo: '', speed: 90, secs: 8, maxfs: 56, auto: true, noteHtml: ''
   };
   var idx = 0, timer = null;
   var $ = function (id) { return document.getElementById(id); };
@@ -13,6 +13,7 @@
     try {
       var raw = localStorage.getItem(KEY);
       if (raw) { var s = JSON.parse(raw); for (var k in s) state[k] = s[k]; }
+      if (!state.noteHtml && state.note) state.noteHtml = legacyToHtml(state.note);
     } catch (e) {}
   }
   function save() {
@@ -105,46 +106,60 @@
     t.style.animation = '';
   }
 
-  /* ---------- Notepad: formatted view + auto-fit ---------- */
-  function renderNote() {
-    var box = $('note'); box.innerHTML = '';
-    var lines = (state.note || '').replace(/\r/g, '').split('\n');
-    if (!lines.join('').trim()) {
-      var ph = document.createElement('p'); ph.className = 'ph';
-      ph.textContent = 'Press Ctrl+E to type the announcement…';
-      box.appendChild(ph); fitNote(); return;
+  /* ---------- Notepad: rich text view + auto-fit ---------- */
+  var OK_TAGS = { B:1, STRONG:1, I:1, EM:1, U:1, S:1, STRIKE:1, SUB:1, SUP:1, SPAN:1, P:1, DIV:1, BR:1, UL:1, OL:1, LI:1, H2:1, H3:1 };
+  var OK_CSS = /^(font-size|font-family|color|background-color|text-align|font-weight|font-style|text-decoration(-[a-z-]+)?)$/;
+
+  function cleanNode(n, parent) {
+    if (n.nodeType === 3) { parent.appendChild(document.createTextNode(n.nodeValue)); return; }
+    if (n.nodeType !== 1 || /^(SCRIPT|STYLE|IFRAME|OBJECT|EMBED)$/.test(n.tagName)) return;
+    var target = parent;
+    if (OK_TAGS[n.tagName]) {
+      var el = document.createElement(n.tagName.toLowerCase());
+      if (n.style) for (var i = 0; i < n.style.length; i++) {
+        var p = n.style[i], v = n.style.getPropertyValue(p);
+        if (OK_CSS.test(p) && !/url\(|expression|@import/i.test(v)) el.style.setProperty(p, v);
+      }
+      parent.appendChild(el); target = el;
     }
-    var first = true, para = null, list = null;
-    lines.forEach(function (raw) {
-      var line = raw.trim();
-      if (!line) { para = null; list = null; return; }
-      if (first) {                       /* first line = title */
-        var h = document.createElement('h2'); h.textContent = line;
-        box.appendChild(h); first = false; return;
-      }
-      var m = line.match(/^[-•*]\s+(.*)$/);
-      if (m) {                           /* "- item" = bullet */
-        para = null;
-        if (!list) { list = document.createElement('ul'); box.appendChild(list); }
-        var li = document.createElement('li'); li.textContent = m[1]; list.appendChild(li);
-      } else {
-        list = null;
-        if (!para) { para = document.createElement('p'); box.appendChild(para); }
-        else para.appendChild(document.createElement('br'));
-        para.appendChild(document.createTextNode(line));
-      }
+    for (var c = n.firstChild; c; c = c.nextSibling) cleanNode(c, target);
+  }
+  function sanitizeToString(html) {      /* whitelist tags/styles; parsed in an inert document */
+    var doc = new DOMParser().parseFromString(html || '', 'text/html');
+    var out = document.createElement('div');
+    cleanNode(doc.body, out);
+    return out.innerHTML;
+  }
+  function esc(t) { return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function legacyToHtml(text) {          /* converts the older plain-text note */
+    var out = [], mode = null, first = true;
+    function close() { if (mode === 'p') out.push('</p>'); if (mode === 'ul') out.push('</ul>'); mode = null; }
+    text.replace(/\r/g, '').split('\n').forEach(function (raw) {
+      var l = raw.trim();
+      if (!l) { close(); return; }
+      if (first) { out.push('<h2>' + esc(l) + '</h2>'); first = false; return; }
+      var m = l.match(/^[-•*]\s+(.*)$/);
+      if (m) { if (mode !== 'ul') { close(); out.push('<ul>'); mode = 'ul'; } out.push('<li>' + esc(m[1]) + '</li>'); }
+      else { if (mode !== 'p') { close(); out.push('<p>'); mode = 'p'; } else out.push('<br>'); out.push(esc(l)); }
     });
+    close();
+    return out.join('');
+  }
+  function renderNote() {
+    var box = $('note');
+    box.innerHTML = sanitizeToString(state.noteHtml);
+    if (!box.textContent.trim()) box.innerHTML = '<p class="ph">Press Ctrl+E to type the announcement…</p>';
     fitNote();
   }
   function fitNote() {
     var el = $('note'), lo = 12, hi = state.maxfs, best = lo;
-    if (!state.auto) { el.style.fontSize = hi + 'px'; return; }
-    for (var i = 0; i < 9; i++) {      /* largest size that fits without scrolling */
-      var mid = (lo + hi) / 2;
-      el.style.fontSize = mid + 'px';
+    function put(px) { el.style.fontSize = px + 'px'; el.style.setProperty('--b', px + 'px'); }
+    if (!state.auto) { put(hi); return; }
+    for (var i = 0; i < 9; i++) {        /* largest size that fits without scrolling */
+      var mid = (lo + hi) / 2; put(mid);
       if (el.scrollHeight <= el.clientHeight + 1) { best = mid; lo = mid; } else { hi = mid; }
     }
-    el.style.fontSize = best + 'px';
+    put(best);
   }
 
   /* ---------- Sync UI with state ---------- */
@@ -212,18 +227,84 @@
   /* Pop-out notepad editor */
   function noteOpen() { return !$('noteModal').hidden; }
   function openNote() {
-    var t = $('noteEdit');
     $('noteModal').hidden = false;
-    t.value = state.note; t.focus(); t.setSelectionRange(t.value.length, t.value.length);
+    editor.innerHTML = sanitizeToString(state.noteHtml);
+    document.execCommand('defaultParagraphSeparator', false, 'p');
+    document.execCommand('styleWithCSS', false, true);
+    editor.focus();
+    var r = document.createRange(), sel = window.getSelection();
+    r.selectNodeContents(editor); r.collapse(false);
+    sel.removeAllRanges(); sel.addRange(r);
   }
   function closeNote() { $('noteModal').hidden = true; }
   $('editNote').onclick = openNote;
   $('noteClose').onclick = closeNote;
   $('note').onclick = function () { if (isEdit()) openNote(); };
   $('noteModal').onmousedown = function (e) { if (e.target === this) closeNote(); };
-  $('noteEdit').oninput = function (e) {
-    state.note = e.target.value; save(); renderNote();
-  };
+  /* ----- Rich text editor (toolbar) ----- */
+  var editor = $('noteEdit'), savedRange = null;
+  document.addEventListener('selectionchange', function () {
+    var sel = window.getSelection();
+    if (sel.rangeCount && editor.contains(sel.anchorNode)) savedRange = sel.getRangeAt(0).cloneRange();
+  });
+  function restoreSel() {
+    editor.focus();
+    if (savedRange) { var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(savedRange); }
+  }
+  function commit() { state.noteHtml = sanitizeToString(editor.innerHTML); save(); renderNote(); }
+  function run(cmd, val) { document.execCommand(cmd, false, val); commit(); }
+
+  function applySize(k) {                /* size is relative to the notepad's base size, so auto-fit still works */
+    document.execCommand('styleWithCSS', false, false);
+    document.execCommand('fontSize', false, '7');
+    document.execCommand('styleWithCSS', false, true);
+    var made = [];
+    Array.prototype.forEach.call(editor.querySelectorAll('font[size="7"]'), function (f) {
+      var sp = document.createElement('span');
+      sp.style.fontSize = 'calc(var(--b) * ' + k + ')';
+      while (f.firstChild) sp.appendChild(f.firstChild);
+      f.parentNode.replaceChild(sp, f); made.push(sp);
+    });
+    if (made.length) {                   /* keep the words selected for more formatting */
+      var r = document.createRange(), sel = window.getSelection();
+      r.setStartBefore(made[0]); r.setEndAfter(made[made.length - 1]);
+      sel.removeAllRanges(); sel.addRange(r); savedRange = r.cloneRange();
+    }
+    commit();
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll('#tb [data-cmd]'), function (b) {
+    b.onmousedown = function (e) { e.preventDefault(); };
+    b.onclick = function () { restoreSel(); run(b.getAttribute('data-cmd')); };
+  });
+  function bindSelect(id, fn) {
+    $(id).onchange = function () {
+      var v = this.value; this.selectedIndex = 0;
+      if (!v) return; restoreSel(); fn(v);
+    };
+  }
+  bindSelect('selBlock', function (v) { run('formatBlock', '<' + v + '>'); });
+  bindSelect('selFont', function (v) { run('fontName', v); });
+  bindSelect('selSize', applySize);
+  function bindColor(id, chip, cmd) {
+    var inp = $(id);
+    inp.oninput = function () { $(chip).style.setProperty('--c', inp.value); };
+    inp.onchange = function () {
+      restoreSel();
+      if (cmd === 'hiliteColor') {
+        if (!document.execCommand('hiliteColor', false, inp.value)) document.execCommand('backColor', false, inp.value);
+        commit();
+      } else run(cmd, inp.value);
+    };
+  }
+  bindColor('hlIn', 'hlChip', 'hiliteColor');
+  bindColor('fgIn', 'fgChip', 'foreColor');
+
+  editor.addEventListener('input', commit);
+  editor.addEventListener('paste', function (e) {   /* paste as plain text; format with the toolbar */
+    e.preventDefault();
+    document.execCommand('insertText', false, (e.clipboardData || window.clipboardData).getData('text/plain'));
+  });
 
   document.addEventListener('keydown', function (e) {
     if ((e.ctrlKey || e.metaKey) && (e.key === 'e' || e.key === 'E')) {
